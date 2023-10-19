@@ -2,7 +2,7 @@
 ## Author: TheBoringDad
 ## Version: 0.2
 ## Title: Classic Wrath Collections Buddy
-## Notes: Extra info for mounts (so far)
+## Notes: Extra info for mounts.
 ## SavedVariables: ClassicWrathCollectionsBuddy_Global
 
 Data.lua
