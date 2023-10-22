@@ -1,9 +1,10 @@
 ## Interface: 30403
 ## Author: TheBoringDad
-## Version: 0.3
+## Version: 0.4
 ## Title: Classic Wrath Collections Buddy
 ## Notes: Extra info for mounts.
 ## SavedVariables: ClassicWrathCollectionsBuddy_Global
 
 Data.lua
 ClassicWrathCollectionsBuddy.lua
+ClassicWrathCollectionsBuddy.xml
