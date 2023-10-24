@@ -37,15 +37,18 @@ local function modifyMountInterface()
         end
     end)
 
-    local macroExists = false;
-    for i = 1, GetNumMacros() do
+    local macroExists = 0;
+    local numMacros = GetNumMacros()
+    for i = 1, numMacros do
         local name, icon, body = GetMacroInfo(i)
-        if name == macroName and body == macroBody then
-            macroExists = true
+        --print(name, body)
+        if (name == macroName) then
+            macroExists = 1
             macroId = i;
+            --print("macro exists")
         end
     end
-    if macroExists == false then
+    if macroExists == 0 then
         macroId = CreateMacro(macroName, 294468, macroBody, nil)
     end
 end
