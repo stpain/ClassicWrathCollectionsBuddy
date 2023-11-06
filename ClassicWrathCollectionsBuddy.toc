@@ -1,10 +1,18 @@
 ## Interface: 30403
 ## Author: TheBoringDad
-## Version: 0.5
+## Version: 0.6
 ## Title: Classic Wrath Collections Buddy
 ## Notes: Extra info for mounts.
 ## SavedVariables: ClassicWrathCollectionsBuddy_Global
+## SavedVariablesPerCharacter: ClassicWrathCollectionsBuddy_Character
+
+Database.lua
 
 Data.lua
 ClassicWrathCollectionsBuddy.lua
 ClassicWrathCollectionsBuddy.xml
+
+#Blizzard_TransmogUtil.lua
+ClassicWrathCollectionsBuddy_Wardrobe.lua
+ClassicWrathCollectionsBuddy_Wardrobe.xml
+

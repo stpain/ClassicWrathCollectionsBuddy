@@ -125,6 +125,26 @@
         "TRANSMOG_OUTFIT_LINK_INVALID",
         "CollectionsJournal_LoadUI",
         "COLLECTIONS_JOURNAL_TAB_INDEX_APPEARANCES",
-        "MountJournalSummonRandomFavoriteButton"
+        "MountJournalSummonRandomFavoriteButton",
+        "UIMenuButtonStretchMixin",
+        "ToyBox",
+        "HeirloomsJournal",
+        "PanelTemplates_GetSelectedTab",
+        "CollectionsJournal_GetTab",
+        "CollectionsJournal_ValidateTab",
+        "WARDROBE",
+        "INVTYPE_CHEST",
+        "class",
+        "GameTooltip_SetDefaultAnchor",
+        "MOUNTS",
+        "PET_JOURNAL",
+        "TOY_BOX",
+        "HEIRLOOMS",
+        "BankFrame",
+        "INVTYPE_WEAPON",
+        "INVTYPE_WEAPONOFFHAND"
+    ],
+    "Lua.diagnostics.disable": [
+        "inject-field"
     ]
 }
