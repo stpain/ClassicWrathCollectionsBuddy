@@ -1,6 +1,6 @@
 ## Interface: 30403
 ## Author: TheBoringDad
-## Version: 0.6
+## Version: 0.7
 ## Title: Classic Wrath Collections Buddy
 ## Notes: Extra info for mounts.
 ## SavedVariables: ClassicWrathCollectionsBuddy_Global
