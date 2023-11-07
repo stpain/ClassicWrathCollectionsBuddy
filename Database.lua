@@ -197,6 +197,17 @@ function Database:AddProfile(nameRealm, classID, setAsCurrentProfile)
         else
             print(string.format("[%s] profile exists!", name))
         end
+
+        --added after so
+        if not self.db.profiles[nameRealm].raceName then
+            self.ticker = C_Timer.NewTicker(1, function()
+                local _, _, _, englishRace, sex = GetPlayerInfoByGUID(UnitGUID("player"))
+                if englishRace and sex then
+                    self.db.profiles[nameRealm].raceName = englishRace
+                    self.ticker:Cancel()
+                end
+            end)
+        end
         if setAsCurrentProfile then
             self:SetProfile(nameRealm)
         end

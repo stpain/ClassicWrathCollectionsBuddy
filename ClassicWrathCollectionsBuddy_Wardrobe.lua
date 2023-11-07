@@ -2,113 +2,1098 @@ local name, addon = ...;
 
 local Database = addon.Database;
 
-ClassicWrathCollectionsBuddy_WardrobeMixin = {}
+local raceFileStringToId = {
+    Human = 1,
+    Orc = 2,
+    Dwarf = 3,
+    NightElf = 4,
+    Scourge = 5,
+    Tauren = 6,
+    Gnome = 7,
+    Troll = 8,
+    Goblin = 9,
+    BloodElf = 10,
+    Draenei = 11,
 
-local equipLocationPositons = {
-    INVTYPE_CHEST = {
-        pos = {0,0,0.15},
-        zoom = 0.85,
-        rotation = 0.0,
+    Worgen = 22,
+    Pandaren = 24,
+    PandarenAlliance = 25,
+    PandarenHorde = 26,
+}
+
+
+local modelRaceOffsets = {
+    Human = {
+        INVTYPE_CHEST = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HEAD = {
+            pos = {0,0,-0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HAND = {
+            pos = {0.5,0,0.2},
+            zoom = 0.5,
+            rotation = 0.9,
+        },
+        INVTYPE_FEET = {
+            pos = {0,0,0.8},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_LEGS = {
+            pos = {0,0,0.5},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_WRIST = {
+            pos = {0.6,0,0.2},
+            zoom = 0.52,
+            rotation = 0.9,
+        },
+        INVTYPE_WAIST = {
+            pos = {0,0,0.2},
+            zoom = 0.8,
+            rotation = 0.0,
+        },
+        INVTYPE_ROBE = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.0,
+        },
+        INVTYPE_SHOULDER = {
+            pos = {0.3,0,-0.15},
+            zoom = 0.6,
+            rotation = -1.1,
+        },
+        INVTYPE_BODY = {
+            pos = {0,0,0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_SHIELD = {
+            pos = {0.2,0,0.2},
+            zoom = 0.45,
+            rotation = -1.6,
+        },
+        INVTYPE_RANGED = {
+            pos = {0.2,0,0.2},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_CLOAK = {
+            pos = {0,0,0.15},
+            zoom = 0.65,
+            rotation = 2.9,
+        },
+        INVTYPE_TABARD = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_MAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_SECONDARYHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_RANGEDRIGHT = {
+            pos = {0,0,0.4},
+            zoom = 0.4,
+            rotation = 0.6,
+        },
+        INVTYPE_WEAPONOFFHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_WEAPONMAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_2HWEAPON = {
+            pos = {0,0,0.0},
+            zoom = 0.15,
+            rotation = 0.8,
+        },
+        INVTYPE_WEAPON = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
     },
-    INVTYPE_HEAD = {
-        pos = {0,0,-0.1},
-        zoom = 0.85,
-        rotation = 0.0,
+    Dwarf = {
+        INVTYPE_CHEST = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HEAD = {
+            pos = {0,0,-0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HAND = {
+            pos = {0.75,0,0.25},
+            zoom = 0.3,
+            rotation = 1.1,
+        },
+        INVTYPE_FEET = {
+            pos = {0,0,0.6},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_LEGS = {
+            pos = {0,0,0.4},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_WRIST = {
+            pos = {0.75,0,0.25},
+            zoom = 0.3,
+            rotation = 1.1,
+        },
+        INVTYPE_WAIST = {
+            pos = {0,0,0.2},
+            zoom = 0.8,
+            rotation = 0.0,
+        },
+        INVTYPE_ROBE = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.0,
+        },
+        INVTYPE_SHOULDER = {
+            pos = {-0.1,0,-0.1},
+            zoom = 0.6,
+            rotation = -1.1,
+        },
+        INVTYPE_BODY = {
+            pos = {0,0,0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_SHIELD = {
+            pos = {0.2,0,0.2},
+            zoom = 0.45,
+            rotation = -1.6,
+        },
+        INVTYPE_RANGED = {
+            pos = {0.2,0,0.2},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_CLOAK = {
+            pos = {0,0,0.15},
+            zoom = 0.65,
+            rotation = 2.9,
+        },
+        INVTYPE_TABARD = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_MAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_SECONDARYHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_RANGEDRIGHT = {
+            pos = {0,0,0.4},
+            zoom = 0.4,
+            rotation = 0.6,
+        },
+        INVTYPE_WEAPONOFFHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_WEAPONMAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_2HWEAPON = {
+            pos = {0,0,0.0},
+            zoom = 0.15,
+            rotation = 0.8,
+        },
+        INVTYPE_WEAPON = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
     },
-    INVTYPE_HAND = {
-        pos = {0.5,0,0.2},
-        zoom = 0.5,
-        rotation = 0.9,
+    Gnome = {
+        INVTYPE_CHEST = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HEAD = {
+            pos = {0,0,-0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HAND = {
+            pos = {0.75,0,0.25},
+            zoom = 0.3,
+            rotation = 1.1,
+        },
+        INVTYPE_FEET = {
+            pos = {0,0,0.3},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_LEGS = {
+            pos = {0,0,0.3},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_WRIST = {
+            pos = {0.75,0,0.15},
+            zoom = 0.3,
+            rotation = 1.1,
+        },
+        INVTYPE_WAIST = {
+            pos = {0,0,0.2},
+            zoom = 0.8,
+            rotation = 0.0,
+        },
+        INVTYPE_ROBE = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.0,
+        },
+        INVTYPE_SHOULDER = {
+            pos = {-0.1,0,-0.0},
+            zoom = 0.65,
+            rotation = -1.1,
+        },
+        INVTYPE_BODY = {
+            pos = {0,0,0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_SHIELD = {
+            pos = {0.2,0,0.2},
+            zoom = 0.45,
+            rotation = -1.6,
+        },
+        INVTYPE_RANGED = {
+            pos = {0.2,0,0.2},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_CLOAK = {
+            pos = {0,0,0.15},
+            zoom = 0.65,
+            rotation = 2.9,
+        },
+        INVTYPE_TABARD = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_MAINHAND = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_SECONDARYHAND = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_RANGEDRIGHT = {
+            pos = {0,0,0.1},
+            zoom = 0.4,
+            rotation = 0.6,
+        },
+        INVTYPE_WEAPONOFFHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_WEAPONMAINHAND = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_2HWEAPON = {
+            pos = {0,0,0.0},
+            zoom = 0.15,
+            rotation = 0.8,
+        },
+        INVTYPE_WEAPON = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
     },
-    INVTYPE_FEET = {
-        pos = {0,0,0.8},
-        zoom = 0.75,
-        rotation = 0.0,
+    NightElf = {
+        INVTYPE_CHEST = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HEAD = {
+            pos = {0,0,-0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HAND = {
+            pos = {0.5,0,0.2},
+            zoom = 0.5,
+            rotation = 0.9,
+        },
+        INVTYPE_FEET = {
+            pos = {0,0,0.8},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_LEGS = {
+            pos = {0,0,0.5},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_WRIST = {
+            pos = {0.6,0,0.2},
+            zoom = 0.52,
+            rotation = 0.9,
+        },
+        INVTYPE_WAIST = {
+            pos = {0,0,0.2},
+            zoom = 0.8,
+            rotation = 0.0,
+        },
+        INVTYPE_ROBE = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.0,
+        },
+        INVTYPE_SHOULDER = {
+            pos = {0.4,0,-0.15},
+            zoom = 0.55,
+            rotation = 0.5,
+        },
+        INVTYPE_BODY = {
+            pos = {0,0,0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_SHIELD = {
+            pos = {0.2,0,0.2},
+            zoom = 0.45,
+            rotation = -1.6,
+        },
+        INVTYPE_RANGED = {
+            pos = {0.2,0,0.2},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_CLOAK = {
+            pos = {0,0,0.15},
+            zoom = 0.65,
+            rotation = 2.9,
+        },
+        INVTYPE_TABARD = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_MAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_SECONDARYHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_RANGEDRIGHT = {
+            pos = {0,0,0.4},
+            zoom = 0.4,
+            rotation = 0.6,
+        },
+        INVTYPE_WEAPONOFFHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_WEAPONMAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_2HWEAPON = {
+            pos = {0,0,0.0},
+            zoom = 0.15,
+            rotation = 0.8,
+        },
+        INVTYPE_WEAPON = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
     },
-    INVTYPE_LEGS = {
-        pos = {0,0,0.5},
-        zoom = 0.75,
-        rotation = 0.0,
+    Draenei = {
+        INVTYPE_CHEST = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HEAD = {
+            pos = {0,0,-0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HAND = {
+            pos = {0.3,0,0.2},
+            zoom = 0.7,
+            rotation = 0.9,
+        },
+        INVTYPE_FEET = {
+            pos = {0,0,0.9},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_LEGS = {
+            pos = {0,0,0.6},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_WRIST = {
+            pos = {0.4,0,0.2},
+            zoom = 0.7,
+            rotation = 0.9,
+        },
+        INVTYPE_WAIST = {
+            pos = {0,0,0.2},
+            zoom = 0.8,
+            rotation = 0.0,
+        },
+        INVTYPE_ROBE = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.0,
+        },
+        INVTYPE_SHOULDER = {
+            pos = {0.3,0,-0.15},
+            zoom = 0.7,
+            rotation = -1.1,
+        },
+        INVTYPE_BODY = {
+            pos = {0,0,0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_SHIELD = {
+            pos = {0.6,0,0.25},
+            zoom = 0.6,
+            rotation = -1.6,
+        },
+        INVTYPE_RANGED = {
+            pos = {0.2,0,0.2},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_CLOAK = {
+            pos = {0,0,0.15},
+            zoom = 0.65,
+            rotation = 2.9,
+        },
+        INVTYPE_TABARD = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_MAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_SECONDARYHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_RANGEDRIGHT = {
+            pos = {0,0,0.4},
+            zoom = 0.4,
+            rotation = 0.6,
+        },
+        INVTYPE_WEAPONOFFHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_WEAPONMAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_2HWEAPON = {
+            pos = {0,0,0.0},
+            zoom = 0.3,
+            rotation = 0.8,
+        },
+        INVTYPE_WEAPON = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
     },
-    INVTYPE_WRIST = {
-        pos = {0.6,0,0.2},
-        zoom = 0.52,
-        rotation = 0.9,
+
+
+    Orc = {
+        INVTYPE_CHEST = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HEAD = {
+            pos = {0,0,-0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HAND = {
+            pos = {0.5,0,0.2},
+            zoom = 0.5,
+            rotation = 0.9,
+        },
+        INVTYPE_FEET = {
+            pos = {0,0,0.8},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_LEGS = {
+            pos = {0,0,0.5},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_WRIST = {
+            pos = {0.6,0,0.2},
+            zoom = 0.52,
+            rotation = 0.9,
+        },
+        INVTYPE_WAIST = {
+            pos = {0,0,0.2},
+            zoom = 0.8,
+            rotation = 0.0,
+        },
+        INVTYPE_ROBE = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.0,
+        },
+        INVTYPE_SHOULDER = {
+            pos = {0.3,0,-0.15},
+            zoom = 0.6,
+            rotation = -1.1,
+        },
+        INVTYPE_BODY = {
+            pos = {0,0,0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_SHIELD = {
+            pos = {0.2,0,0.2},
+            zoom = 0.45,
+            rotation = -1.6,
+        },
+        INVTYPE_RANGED = {
+            pos = {0.2,0,0.2},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_CLOAK = {
+            pos = {0,0,0.15},
+            zoom = 0.65,
+            rotation = 2.9,
+        },
+        INVTYPE_TABARD = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_MAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_SECONDARYHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_RANGEDRIGHT = {
+            pos = {0,0,0.4},
+            zoom = 0.4,
+            rotation = 0.6,
+        },
+        INVTYPE_WEAPONOFFHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_WEAPONMAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_2HWEAPON = {
+            pos = {0,0,0.0},
+            zoom = 0.15,
+            rotation = 0.8,
+        },
+        INVTYPE_WEAPON = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
     },
-    INVTYPE_WAIST = {
-        pos = {0,0,0.2},
-        zoom = 0.8,
-        rotation = 0.0,
+    Scourge = {
+        INVTYPE_CHEST = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HEAD = {
+            pos = {0,0,-0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HAND = {
+            pos = {0,0,0.3},
+            zoom = 0.7,
+            rotation = -1.0,
+        },
+        INVTYPE_FEET = {
+            pos = {0,0,0.8},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_LEGS = {
+            pos = {0,0,0.6},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_WRIST = {
+            pos = {0,0,0.3},
+            zoom = 0.7,
+            rotation = -1.0,
+        },
+        INVTYPE_WAIST = {
+            pos = {0,0,0.2},
+            zoom = 0.8,
+            rotation = 0.0,
+        },
+        INVTYPE_ROBE = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.0,
+        },
+        INVTYPE_SHOULDER = {
+            pos = {-0.1,0,-0.1},
+            zoom = 0.6,
+            rotation = -1.1,
+        },
+        INVTYPE_BODY = {
+            pos = {0,0,0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_SHIELD = {
+            pos = {0.2,0,0.2},
+            zoom = 0.45,
+            rotation = -1.2,
+        },
+        INVTYPE_RANGED = {
+            pos = {0.2,0,0.2},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_CLOAK = {
+            pos = {0,0,0.15},
+            zoom = 0.65,
+            rotation = 2.9,
+        },
+        INVTYPE_TABARD = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_MAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_SECONDARYHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_RANGEDRIGHT = {
+            pos = {0,0,0.4},
+            zoom = 0.4,
+            rotation = 0.6,
+        },
+        INVTYPE_WEAPONOFFHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_WEAPONMAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_2HWEAPON = {
+            pos = {0,0,0.0},
+            zoom = 0.15,
+            rotation = 0.8,
+        },
+        INVTYPE_WEAPON = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
     },
-    INVTYPE_ROBE = {
-        pos = {0,0,0.1},
-        zoom = 0.45,
-        rotation = 0.0,
+    Troll = {
+        INVTYPE_CHEST = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HEAD = {
+            pos = {0,0,-0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HAND = {
+            pos = {0.75,0,0.25},
+            zoom = 0.5,
+            rotation = 1.1,
+        },
+        INVTYPE_FEET = {
+            pos = {0,0,0.9},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_LEGS = {
+            pos = {0,0,0.6},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_WRIST = {
+            pos = {0.75,0,0.15},
+            zoom = 0.5,
+            rotation = 1.1,
+        },
+        INVTYPE_WAIST = {
+            pos = {0,0,0.5},
+            zoom = 0.8,
+            rotation = 0.0,
+        },
+        INVTYPE_ROBE = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.0,
+        },
+        INVTYPE_SHOULDER = {
+            pos = {-0.1,0,-0.0},
+            zoom = 0.7,
+            rotation = -1.1,
+        },
+        INVTYPE_BODY = {
+            pos = {0,0,0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_SHIELD = {
+            pos = {0.2,0,0.2},
+            zoom = 0.45,
+            rotation = -1.6,
+        },
+        INVTYPE_RANGED = {
+            pos = {0.2,0,0.2},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_CLOAK = {
+            pos = {0,0,0.15},
+            zoom = 0.65,
+            rotation = 2.9,
+        },
+        INVTYPE_TABARD = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_MAINHAND = {
+            pos = {0,0,0.3},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_SECONDARYHAND = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_RANGEDRIGHT = {
+            pos = {0,0,0.1},
+            zoom = 0.4,
+            rotation = 0.6,
+        },
+        INVTYPE_WEAPONOFFHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_WEAPONMAINHAND = {
+            pos = {0,0,0.3},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_2HWEAPON = {
+            pos = {0,0,0.0},
+            zoom = 0.15,
+            rotation = 0.8,
+        },
+        INVTYPE_WEAPON = {
+            pos = {0,0,0.3},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
     },
-    INVTYPE_SHOULDER = {
-        pos = {0.4,0,-0.15},
-        zoom = 0.55,
-        rotation = 0.5,
+    BloodElf = {
+        INVTYPE_CHEST = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HEAD = {
+            pos = {0,0,-0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HAND = {
+            pos = {0.5,0,0.1},
+            zoom = 0.7,
+            rotation = 0.9,
+        },
+        INVTYPE_FEET = {
+            pos = {0,0,0.9},
+            zoom = 0.75,
+            rotation = -0.5,
+        },
+        INVTYPE_LEGS = {
+            pos = {0,0,0.52},
+            zoom = 0.75,
+            rotation = -0.5,
+        },
+        INVTYPE_WRIST = {
+            pos = {0.5,0,0.0},
+            zoom = 0.7,
+            rotation = 0.9,
+        },
+        INVTYPE_WAIST = {
+            pos = {0,0,0.2},
+            zoom = 0.8,
+            rotation = -0.5,
+        },
+        INVTYPE_ROBE = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.0,
+        },
+        INVTYPE_SHOULDER = {
+            pos = {0.4,0,-0.15},
+            zoom = 0.6,
+            rotation = 0.5,
+        },
+        INVTYPE_BODY = {
+            pos = {0,0,0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_SHIELD = {
+            pos = {0.2,0,0.2},
+            zoom = 0.45,
+            rotation = -1.2,
+        },
+        INVTYPE_RANGED = {
+            pos = {0.2,0,0.2},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_CLOAK = {
+            pos = {0,0,0.15},
+            zoom = 0.65,
+            rotation = 2.9,
+        },
+        INVTYPE_TABARD = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_MAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_SECONDARYHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_RANGEDRIGHT = {
+            pos = {0,0,0.4},
+            zoom = 0.4,
+            rotation = 0.6,
+        },
+        INVTYPE_WEAPONOFFHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_WEAPONMAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_2HWEAPON = {
+            pos = {0,0,0.0},
+            zoom = 0.15,
+            rotation = 0.8,
+        },
+        INVTYPE_WEAPON = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
     },
-    INVTYPE_BODY = {
-        pos = {0,0,0.1},
-        zoom = 0.85,
-        rotation = 0.0,
-    },
-    INVTYPE_SHIELD = {
-        pos = {0.2,0,0.2},
-        zoom = 0.45,
-        rotation = -1.6,
-    },
-    INVTYPE_RANGED = {
-        pos = {0.2,0,0.2},
-        zoom = 0.2,
-        rotation = -1.6,
-    },
-    INVTYPE_CLOAK = {
-        pos = {0,0,0.15},
-        zoom = 0.65,
-        rotation = 2.9,
-    },
-    INVTYPE_TABARD = {
-        pos = {0,0,0.15},
-        zoom = 0.85,
-        rotation = 0.0,
-    },
-    INVTYPE_MAINHAND = {
-        pos = {0,0,0.4},
-        zoom = 0.45,
-        rotation = 0.6,
-    },
-    INVTYPE_SECONDARYHAND = {
-        pos = {0,0,0.4},
-        zoom = 0.45,
-        rotation = -0.7,
-    },
-    INVTYPE_RANGEDRIGHT = {
-        pos = {0,0,0.4},
-        zoom = 0.4,
-        rotation = 0.6,
-    },
-    INVTYPE_WEAPONOFFHAND = {
-        pos = {0,0,0.4},
-        zoom = 0.45,
-        rotation = -0.7,
-    },
-    INVTYPE_WEAPONMAINHAND = {
-        pos = {0,0,0.4},
-        zoom = 0.45,
-        rotation = 0.6,
-    },
-    INVTYPE_2HWEAPON = {
-        pos = {0,0,0.0},
-        zoom = 0.15,
-        rotation = 0.8,
-    },
-    INVTYPE_WEAPON = {
-        pos = {0,0,0.4},
-        zoom = 0.45,
-        rotation = 0.6,
+    Tauren = {
+        INVTYPE_CHEST = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HEAD = {
+            pos = {0,0,-0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_HAND = {
+            pos = {0.3,0,0.2},
+            zoom = 0.6,
+            rotation = 0.9,
+        },
+        INVTYPE_FEET = {
+            pos = {0,0,0.7},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_LEGS = {
+            pos = {0,0,0.5},
+            zoom = 0.75,
+            rotation = 0.0,
+        },
+        INVTYPE_WRIST = {
+            pos = {0.4,0,0.2},
+            zoom = 0.6,
+            rotation = 0.9,
+        },
+        INVTYPE_WAIST = {
+            pos = {0,0,0.2},
+            zoom = 0.8,
+            rotation = 0.0,
+        },
+        INVTYPE_ROBE = {
+            pos = {0,0,0.1},
+            zoom = 0.45,
+            rotation = 0.0,
+        },
+        INVTYPE_SHOULDER = {
+            pos = {0.3,0,-0.15},
+            zoom = 0.5,
+            rotation = -1.1,
+        },
+        INVTYPE_BODY = {
+            pos = {0,0,0.1},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_SHIELD = {
+            pos = {0.6,0,0.25},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_RANGED = {
+            pos = {0.2,0,0.2},
+            zoom = 0.2,
+            rotation = -1.6,
+        },
+        INVTYPE_CLOAK = {
+            pos = {0,0,0.15},
+            zoom = 0.65,
+            rotation = 2.9,
+        },
+        INVTYPE_TABARD = {
+            pos = {0,0,0.15},
+            zoom = 0.85,
+            rotation = 0.0,
+        },
+        INVTYPE_MAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_SECONDARYHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_RANGEDRIGHT = {
+            pos = {0,0,0.4},
+            zoom = 0.4,
+            rotation = 0.6,
+        },
+        INVTYPE_WEAPONOFFHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = -0.7,
+        },
+        INVTYPE_WEAPONMAINHAND = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
+        INVTYPE_2HWEAPON = {
+            pos = {0,0,0.0},
+            zoom = 0.3,
+            rotation = 0.8,
+        },
+        INVTYPE_WEAPON = {
+            pos = {0,0,0.4},
+            zoom = 0.45,
+            rotation = 0.6,
+        },
     },
 }
 
@@ -151,14 +1136,63 @@ local classIdArmorType = {
     [12] = 2, --dh
 }
 
-local stuff = {
-    --shields are classID 4 subclassID 6
-}
+
+
+
+
+
+AppearanceUtil = {}
+
+function AppearanceUtil:SetClass(classID)
+    self.classID = classID;
+end
+
+function AppearanceUtil:GetAppearancesForSlot(invSlot)
+    local t = {}
+    if addon.transmogItemData and addon.transmogItemData[invSlot] then
+        for appearanceID, items in pairs(addon.transmogItemData[invSlot]) do
+            if items[1] and (items[1].subClassID == classIdArmorType[self.classID]) then
+                local info = {}
+                info.appearanceID = appearanceID
+                info.matchingAppearances = {}
+                table.sort(items, function(a, b)
+                    return a.itemID > b.itemID
+                end)
+    
+                for k, item in ipairs(items) do
+                    if k == 1 then
+                        info.itemID = item.itemID
+                    end
+                    table.insert(info.matchingAppearances, item)
+                end
+    
+                table.insert(t, info)
+            end
+        end
+    end
+    return t;
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local spacingNoSmallButton = 2;
 local spacingWithSmallButton = 12;
 local defaultSectionSpacing = 24;
 local shorterSectionSpacing = 19;
+
+ClassicWrathCollectionsBuddy_WardrobeMixin = {}
 
 function ClassicWrathCollectionsBuddy_WardrobeMixin:CreateSlotButtons()
 	local slots = { "head", "shoulder", "cloak", "chest", "robe", spacingWithSmallButton, "tabard", "wrist", "hand", "waist", "legs", "feet", defaultSectionSpacing, "mainhand", "shield" };
@@ -229,12 +1263,16 @@ end
 
 function ClassicWrathCollectionsBuddy_WardrobeMixin:CWC_OnTransmogAppearanceAdded()
 
-    if self.items then
-        self:LoadItems(self.items)
-    end
+    if self:IsVisible() then
 
-    if self.loadWeaponSubClassID then
-        self:LoadWeapons(self.loadWeaponSubClassID)
+        if self.items then
+            self:LoadItems(self.items)
+        end
+
+        if self.loadWeaponSubClassID then
+            self:LoadWeapons(self.loadWeaponSubClassID)
+        end
+
     end
 end
 
@@ -446,14 +1484,21 @@ end
 
 function ClassicWrathCollectionsBuddy_WardrobeMixin:OnPageChanged()
 
+    if not self.characterProfile then
+        return
+    end
+    if not self.characterProfile.raceName then
+        return
+    end
+
     local i = 1
     C_Timer.NewTicker(0.01, function()
         local model = self.Models[i]
         local index = i + (self.PagingFrame:GetCurrentPage() - 1) * self.PAGE_SIZE
 
-        if self.filteredItems[index] and equipLocationPositons[self.filteredEquipLocation] then
+        if self.filteredItems[index] and modelRaceOffsets[self.characterProfile.raceName][self.filteredEquipLocation] then
 
-            local modelSetup = equipLocationPositons[self.filteredEquipLocation]
+            local modelSetup = modelRaceOffsets[self.characterProfile.raceName][self.filteredEquipLocation]
             model:Show()
             model:Undress()
             --C_Timer.After(0.2, function()
