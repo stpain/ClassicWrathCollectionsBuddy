@@ -116,11 +116,13 @@ local function modifyMountInterface()
         EventRegistry:TriggerEvent("CollectionsJournal.TabSet", CollectionsJournal, selected);
     end
 
-    PanelTemplates_SetNumTabs(CollectionsJournal, 5);
+    C_Timer.After(3.0, function()
+        local wardrobeTab = CreateFrame("Button", "CollectionsJournalTab5", CollectionsJournal, "CollectionsJournalTab", 5)
+        wardrobeTab:SetPoint("LEFT", "CollectionsJournalTab4", "RIGHT", -16, 0)
+        wardrobeTab:SetText(WARDROBE)
 
-    local wardrobeTab = CreateFrame("Button", "CollectionsJournalTab5", CollectionsJournal, "CollectionsJournalTab", 5)
-    wardrobeTab:SetPoint("LEFT", "CollectionsJournalTab4", "RIGHT", -16, 0)
-    wardrobeTab:SetText(WARDROBE)
+        PanelTemplates_SetNumTabs(CollectionsJournal, 5);
+    end)
 
 end
 

@@ -1097,6 +1097,33 @@ local modelRaceOffsets = {
     },
 }
 
+--look up table to set the mog slotID
+local outfitInvSlots = {
+["INVTYPE_HEAD"] = 1,
+["INVTYPE_SHOULDER"] = 3,
+["INVTYPE_BODY"] = 4,
+["INVTYPE_CHEST"] = 5,
+["INVTYPE_ROBE"] = 5,
+["INVTYPE_WAIST"] = 6,
+["INVTYPE_LEGS"] = 7,
+["INVTYPE_FEET"] = 8,
+["INVTYPE_WRIST"] = 9,
+["INVTYPE_HAND"] = 10,
+["INVTYPE_CLOAK"] = 15,
+["INVTYPE_MAINHAND"] = 16,
+["INVTYPE_OFFHAND"] = 17,
+["INVTYPE_RANGED"] = 16,
+["INVTYPE_RANGEDRIGHT"] = 16,
+["INVTYPE_TABARD"] = 19,
+["INVTYPE_WEAPON"] = 16,
+["INVTYPE_2HWEAPON"] = 16,
+["INVTYPE_WEAPONMAINHAND"] = 16,
+["INVTYPE_WEAPONOFFHAND"] = 17,
+["INVTYPE_SHIELD"] = 17,
+["INVTYPE_HOLDABLE"] = 17,
+}
+
+--used to determine the model position
 local equipLocationWeapons = {
     [0] = "INVTYPE_WEAPON",
     [1] = "INVTYPE_2HWEAPON",
@@ -1115,7 +1142,7 @@ local equipLocationWeapons = {
     [14] = "INVTYPE_WEAPON",
     [15] = "INVTYPE_WEAPON",
     [16] = "INVTYPE_WEAPON",
-    [17] = "INVTYPE_WEAPON",
+    [17] = "INVTYPE_WEAPONOFFHAND",
     [18] = "INVTYPE_RANGED",
     [19] = "INVTYPE_WEAPON",
     [20] = "INVTYPE_WEAPON",
@@ -1136,11 +1163,52 @@ local classIdArmorType = {
     [12] = 2, --dh
 }
 
+local popoutWardrobeNineSlice =
+{
+    TopLeftCorner =	{ atlas = "UI-Frame-DiamondMetal-CornerTopLeft", },
+    TopRightCorner =	{ atlas = "UI-Frame-DiamondMetal-CornerTopRight", },
+    BottomLeftCorner =	{ atlas = "UI-Frame-DiamondMetal-CornerBottomLeft", },
+    BottomRightCorner =	{ atlas = "UI-Frame-DiamondMetal-CornerBottomRight", },
+    TopEdge = { atlas = "_UI-Frame-DiamondMetal-EdgeTop", },
+    BottomEdge = { atlas = "_UI-Frame-DiamondMetal-EdgeBottom", },
+    LeftEdge = { atlas = "!UI-Frame-DiamondMetal-EdgeLeft", },
+    RightEdge = { atlas = "!UI-Frame-DiamondMetal-EdgeRight", },
+    --Center = { layer = "BACKGROUND", atlas = "ClassHall_InfoBoxMission-BackgroundTile", x = -20, y = 20, x1 = 20, y1 = -20 },
+}
 
 
 
 
 
+StaticPopupDialogs['ClassicWrathCollectionsBuddy_NewOutfitPopup'] = {
+    text = "New outfit name.",
+    button1 = YES,
+    button2 = NO,
+    OnAccept = function(self, data)
+        if data.name then
+            local str = self.editBox:GetText()
+            if str and (#str > 0) and (str ~= " ") then
+                Database:CreateOutfit(data.name, str)
+            end
+        end
+    end,
+    OnCancel = function(self)
+
+    end,
+    timeout = 0,
+    hasEditBox = true,
+    whileDead = true,
+    hideOnEscape = false,
+    preferredIndex = 3,
+    showAlert = 1,
+}
+
+
+
+
+
+
+--wip
 AppearanceUtil = {}
 
 function AppearanceUtil:SetClass(classID)
@@ -1195,7 +1263,10 @@ local shorterSectionSpacing = 19;
 ClassicWrathCollectionsBuddy_WardrobeMixin = {}
 
 function ClassicWrathCollectionsBuddy_WardrobeMixin:CreateSlotButtons()
-	local slots = { "head", "shoulder", "cloak", "chest", "robe", spacingWithSmallButton, "tabard", "wrist", "hand", "waist", "legs", "feet", defaultSectionSpacing, "mainhand", "shield" };
+
+    self.navButtons = {}
+
+	local slots = { "head", "shoulder", "cloak", "chest", "robe", "tabard", "wrist", "hand", "waist", "legs", "feet", defaultSectionSpacing, "mainhand", "offhand", "shield" };
 	local parentFrame = self.SlotsFrame;
 	local lastButton;
 	local xOffset = spacingNoSmallButton;
@@ -1207,6 +1278,8 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:CreateSlotButtons()
 		else
 			local slotString = slots[i];
 			local button = CreateFrame("BUTTON", nil, parentFrame, "WardrobeSlotButtonTemplate");
+
+            --adjust atlas as the table was modified to INV_* name
             if slotString == "shield" then
                 button.NormalTexture:SetAtlas("transmog-nav-slot-secondaryhand", true);
             elseif slotString == "hand" then
@@ -1214,6 +1287,8 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:CreateSlotButtons()
             elseif slotString == "cloak" then
                 button.NormalTexture:SetAtlas("transmog-nav-slot-back", true);
             elseif slotString == "secondaryhand" then
+                button.NormalTexture:SetAtlas("transmog-nav-slot-mainhand", true);
+            elseif slotString == "offhand" then
                 button.NormalTexture:SetAtlas("transmog-nav-slot-mainhand", true);
             elseif slotString == "robe" then
                 button.NormalTexture:SetAtlas("transmog-nav-slot-chest", true);
@@ -1229,13 +1304,74 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:CreateSlotButtons()
             button.equipLocation = string.format("INVTYPE_%s", slotString:upper())
 
             button:SetScript("OnClick", function()
-                if addon.transmogItemData and addon.transmogItemData[button.equipLocation] then
-                    self.filteredEquipLocation = button.equipLocation
-                    self:LoadItems(addon.transmogItemData[button.equipLocation])
-                    self.WeaponDropDown:Hide()
+
+                for k, but in ipairs(self.navButtons) do
+                    but.SelectedTexture:Hide()
+                end
+                button.SelectedTexture:Show()
+
+
+                --weaponSlot 1=main, 2=off, 3=held
+
+                --main hand weapons, set the weaponSlot for model try on
+                if button.equipLocation == "INVTYPE_MAINHAND" then
+                    UIDropDownMenu_Initialize(self.WeaponDropDown, function(CwcWardrobeFrameWeaponDropDown)
+                        for i = 0, 20 do
+                            if i ~= 11 and i ~= 12 and i ~= 9 and i ~= 17 and i ~= 14 then
+                                local info = UIDropDownMenu_CreateInfo()
+                                local name, isArmorType = GetItemSubClassInfo(2, i)
+                                info.text = name
+                                info.func = function()
+                                    self.weaponSlot = 1
+                                    UIDropDownMenu_SetText(self.WeaponDropDown, name)
+                                    self:LoadWeapons(i)
+                                end
+                                UIDropDownMenu_AddButton(info)
+                            end
+                        end
+                    end)
+                    self.WeaponDropDown:Show()
+
+
+                elseif button.equipLocation == "INVTYPE_OFFHAND" then
+                    UIDropDownMenu_Initialize(self.WeaponDropDown, function(CwcWardrobeFrameWeaponDropDown)
+                        local info = UIDropDownMenu_CreateInfo()
+                        -- local name, isArmorType = GetItemSubClassInfo(4, 0)
+                        info.text = INVTYPE_HOLDABLE
+                        info.func = function()
+                            self.weaponSlot = 3
+                            self.selectedInvType = "INVTYPE_WEAPONOFFHAND"
+                            UIDropDownMenu_SetText(self.WeaponDropDown, INVTYPE_HOLDABLE)
+                            self:LoadWeapons(0)
+                        end
+                        UIDropDownMenu_AddButton(info)
+                        for i = 0, 20 do
+                            if i == 0 or i == 4 or i == 7 or i == 13 or i == 15 then
+                                local info = UIDropDownMenu_CreateInfo()
+                                local name, isArmorType = GetItemSubClassInfo(2, i)
+                                info.text = name
+                                info.func = function()
+                                    self.weaponSlot = 2
+                                    UIDropDownMenu_SetText(self.WeaponDropDown, name)
+                                    self:LoadWeapons(i)
+                                end
+                                UIDropDownMenu_AddButton(info)
+                            end
+                        end
+                    end)
+                    self.WeaponDropDown:Show()
+
+
+
                 else
-                    if button.equipLocation == "INVTYPE_MAINHAND" then
-                        self.WeaponDropDown:Show()
+
+                    --non weapons use different logic
+                    --self.selectedInvType is used to position the model
+                    if addon.transmogItemData and addon.transmogItemData[button.equipLocation] then
+                        self.weaponSlot = 0
+                        self.selectedInvType = button.equipLocation
+                        self:LoadItems(addon.transmogItemData[button.equipLocation])
+                        self.WeaponDropDown:Hide()
                     end
                 end
             end)
@@ -1251,35 +1387,88 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:CreateSlotButtons()
 
 			xOffset = spacingNoSmallButton;
 			lastButton = button;
+
+            table.insert(self.navButtons, button)
 		end
 	end
 end
 
 
+function ClassicWrathCollectionsBuddy_WardrobeMixin:RefreshOutfitDropdown()
+    UIDropDownMenu_SetWidth(self.DressUp.OutfitDropDown, 100)
+    UIDropDownMenu_Initialize(self.DressUp.OutfitDropDown, function(CwcWardrobeFrameDressUpOutfitDropDown)
+
+        for k, v in ipairs(Database.db.outfits) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = v.name
+            info.notCheckable = true
+            info.func = function()
+                UIDropDownMenu_SetText(self.DressUp.OutfitDropDown, v.name);
+                self.DressUp.Model.selectedOutfit = v;
+                self.DressUp.Model.selectedOutfitIndex = k;
+                for k, itemID in pairs(v.items) do
+                    self.DressUp.Model:TryOn("item:"..itemID)
+                end
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+end
+
+
 function ClassicWrathCollectionsBuddy_WardrobeMixin:Database_OnProfileSelected(profile)
     self.characterProfile = profile;
+    self:RefreshOutfitDropdown()
+    self.DressUp.Background:SetAtlas(string.format("transmog-background-race-%s", self.characterProfile.raceName));
+end
+
+function ClassicWrathCollectionsBuddy_WardrobeMixin:Database_OnOutfitDeleted()
+    self:RefreshOutfitDropdown()
+end
+
+function ClassicWrathCollectionsBuddy_WardrobeMixin:Database_OnOutfitCreated(index, outfit)
+    self.DressUp.Model.selectedOutfit = outfit;
+    self.DressUp.Model.selectedOutfitIndex = index;
+    for k, itemID in pairs(outfit.items) do
+        self.DressUp.Model:TryOn("item:"..itemID)
+    end
+
+    self:RefreshOutfitDropdown()
+
+end
+
+function ClassicWrathCollectionsBuddy_WardrobeMixin:CWC_OnWardrobeItemClicked(itemInfo, weaponSlot)
+    if itemInfo.itemID then
+        self.DressUp.Model:TryOn("item:"..itemInfo.itemID, weaponSlot)
+
+        if self.DressUp.Model.selectedOutfit then
+            self.DressUp.Model.selectedOutfit.items[itemInfo.equipLocation] = itemInfo.itemID
+        end
+    end
+end
+
+
+function ClassicWrathCollectionsBuddy_WardrobeMixin:CreateTransmoghyperlink(outfit)
+    if outfit and outfit.items then
+        local link = "|cffff80ff|Haddon:"
+        for k, v in pairs(outfit.items) do
+
+        end
+    end
 end
 
 
 function ClassicWrathCollectionsBuddy_WardrobeMixin:CWC_OnTransmogAppearanceAdded()
 
-    if self:IsVisible() then
-
-        if self.items then
-            self:LoadItems(self.items)
-        end
-
-        if self.loadWeaponSubClassID then
-            self:LoadWeapons(self.loadWeaponSubClassID)
-        end
-
-    end
 end
 
 function ClassicWrathCollectionsBuddy_WardrobeMixin:OnLoad()
 
     addon:RegisterCallback("Database_OnProfileSelected", self.Database_OnProfileSelected, self)
     addon:RegisterCallback("CWC_OnTransmogAppearanceAdded", self.CWC_OnTransmogAppearanceAdded, self)
+    addon:RegisterCallback("Database_OnOutfitCreated", self.Database_OnOutfitCreated, self)
+    addon:RegisterCallback("Database_OnOutfitDeleted", self.Database_OnOutfitDeleted, self)
+    addon:RegisterCallback("CWC_OnWardrobeItemClicked", self.CWC_OnWardrobeItemClicked, self)
 
 	self:CreateSlotButtons();
 	self.BGCornerTopLeft:Hide();
@@ -1298,20 +1487,68 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:OnLoad()
 
     self.items = {}
     self.filteredItems = {}
+    self.weaponSlot = 0;
 
-    UIDropDownMenu_SetWidth(self.WeaponDropDown, 160)
-    UIDropDownMenu_Initialize(self.WeaponDropDown, function(CwcWardrobeFrameWeaponDropDown)
-        for i = 0, 20 do
-            if i ~= 11 and i ~= 12 and i ~= 9 and i ~= 17 and i ~= 14 then
-                local info = UIDropDownMenu_CreateInfo()
-                local name, isArmorType = GetItemSubClassInfo(2, i)
-                info.text = name
-                info.func = function()
-                    UIDropDownMenu_SetText(self.WeaponDropDown, name)
-                    self:LoadWeapons(i)
-                end
-                UIDropDownMenu_AddButton(info)
+    UIDropDownMenu_SetWidth(self.WeaponDropDown, 140)
+
+    self.DressUp.New:SetScript("OnClick", function()
+        if self.characterProfile then
+            StaticPopup_Show("ClassicWrathCollectionsBuddy_NewOutfitPopup", nil, nil, self.characterProfile)
+        end
+    end)
+    self.DressUp.Delete:SetScript("OnClick", function()
+        if self.DressUp.Model.selectedOutfit and self.DressUp.Model.selectedOutfitIndex then
+            Database:DeleteOutfit(self.DressUp.Model.selectedOutfitIndex)
+        end
+    end)
+
+    self.DressUp.Model.items = {}
+    self.DressUp.Model:SetUnit("player")
+    self.DressUp.Model:FreezeAnimation(0, 0, 0);
+	local x, y, z = self.DressUp.Model:TransformCameraSpaceToModelSpace(CreateVector3D(0, 0, -0.25)):GetXYZ();
+	self.DressUp.Model:SetPosition(x, y, z);
+
+    --popoutWardrobeNineSlice
+    NineSliceUtil.ApplyLayout(self.DressUp, popoutWardrobeNineSlice)
+
+    self.DressUp.Model:SetScript("OnMouseDown", function(model, button)
+        if button == "LeftButton" then
+            model.rotating = true
+            model.rotateStartCursorX = GetCursorPosition()
+        end
+    end)
+
+    self.DressUp.Model:SetScript("OnMouseUp", function(model, button)
+        if button == "LeftButton" then
+            model.rotating = false
+        end
+    end)
+
+    self.DressUp.Model:SetScript("OnUpdate", function(model)
+    	if ( model.rotating ) then
+            local x = GetCursorPosition();
+            local diff = (x - model.rotateStartCursorX) * 0.05-- MODELFRAME_DRAG_ROTATION_CONSTANT;
+            model.rotateStartCursorX = GetCursorPosition();
+            model.yaw = (model.yaw or 1) + diff;
+            if ( model.yaw < 0 ) then
+                model.yaw = model.yaw + (2 * PI);
             end
+            if ( model.yaw > (2 * PI) ) then
+                model.yaw = model.yaw - (2 * PI);
+            end
+            model:SetRotation(model.yaw, false);
+
+
+        -- elseif ( model.panning ) then
+        --     local cursorX, cursorY = GetCursorPosition();
+        --     local modelX = model:GetPosition();
+        --     local panSpeedModifier = 100 * sqrt(1 + modelX - model.defaultPosX);
+        --     local modelY = model.panStartModelY + (cursorX - model.panStartCursorX) / panSpeedModifier;
+        --     local modelZ = model.panStartModelZ + (cursorY - model.panStartCursorY) / panSpeedModifier;
+        --     local limits = model:GetPanAndZoomLimits();
+        --     modelY = Clamp(modelY, limits.panMaxLeft, limits.panMaxRight);
+        --     modelZ = Clamp(modelZ, limits.panMaxBottom, limits.panMaxTop);
+        --     model:SetPosition(modelX, modelY, modelZ);
         end
     end)
 
@@ -1339,19 +1576,27 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:OnLoad()
     --                         if not ClassicWrathCollectionsBuddy_Character[itemEquipLoc][info[4]] then
     --                             ClassicWrathCollectionsBuddy_Character[itemEquipLoc][info[4]] = {}
     --                         end
-    --                         table.insert(ClassicWrathCollectionsBuddy_Character[itemEquipLoc][info[4]], {
-    --                             classID = classID,
-    --                             subClassID = subclassID,
-    --                             itemID = info[2],
-    --                             itemLink = item:GetItemLink()
-    --                         })
+    --                         local itemName = item:GetItemName()
+    --                         if itemName:find("Monster -") then
 
-    --                         print(string.format("processed %d of %d", index, numToProcess))
+
+    --                         else
+    --                             table.insert(ClassicWrathCollectionsBuddy_Character[itemEquipLoc][info[4]], {
+    --                                 classID = classID,
+    --                                 subClassID = subclassID,
+    --                                 itemID = info[2],
+    --                                 itemLink = item:GetItemLink(),
+    --                                 sourceID = info[6]
+    --                             })
+    
+    --                         end
     --                     end)
     --                 end
     --             end
 
     --         end
+
+    --         print(string.format("processed %d of %d", index, numToProcess))
 
     --         index = index + 1;
     
@@ -1367,26 +1612,43 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:LoadWeapons(subClassID)
     self.items = nil
 
     self.filteredItems = {}
-    local weapons = {"INVTYPE_WEAPONMAINHAND", "INVTYPE_WEAPON", "INVTYPE_2HWEAPON", "INVTYPE_WEAPONOFFHAND", "INVTYPE_RANGEDRIGHT", "INVTYPE_RANGED"}
+    local weapons;
+    local equipLoc =16
+    if self.weaponSlot == 1 then
+        weapons = {"INVTYPE_WEAPONMAINHAND", "INVTYPE_WEAPON", "INVTYPE_2HWEAPON", "INVTYPE_WEAPONOFFHAND", "INVTYPE_RANGEDRIGHT", "INVTYPE_RANGED"}
+    elseif self.weaponSlot == 2 then
+        weapons = {"INVTYPE_WEAPON", "INVTYPE_WEAPONOFFHAND"}
+        equipLoc = 17
+    elseif self.weaponSlot == 3 then
+        weapons = {"INVTYPE_HOLDABLE"}
+        equipLoc = 17
+    end
+
+
     for k, v in ipairs(weapons) do
         for appearanceID, mogs in pairs(addon.transmogItemData[v]) do
 
-            local isKnown = 0
-            local sharedItems = Database:GetItemIDsForAppearanceID(v, appearanceID)
-            for k, itemID in ipairs(sharedItems) do
-                isKnown = Database:IsItemKnown(itemID)
-                if isKnown == 1 then
-                    break
+            if mogs and #mogs > 0 then
+
+                local isKnown = 0
+                local sharedItems = Database:GetItemIDsForAppearanceID(v, appearanceID)
+                for k, itemID in ipairs(sharedItems) do
+                    isKnown = Database:IsItemKnown(itemID)
+                    if isKnown == 1 then
+                        break
+                    end
                 end
-            end
-    
-            if (mogs[1].classID == 2) and (mogs[1].subClassID == subClassID) then
-                table.insert(self.filteredItems, {
-                    itemID = mogs[1].itemID,
-                    appearanceID = appearanceID,
-                    alternativeItems = mogs,
-                    isKnown = isKnown
-                })
+        
+                if (mogs[1].classID == 2 or (mogs[1].classID == 4)) and (mogs[1].subClassID == subClassID) then
+                    table.insert(self.filteredItems, {
+                        itemID = mogs[1].itemID,
+                        appearanceID = appearanceID,
+                        alternativeItems = mogs,
+                        isKnown = isKnown,
+                        equipLocation = equipLoc
+                    })
+
+                end
             end
         end
     end
@@ -1404,7 +1666,11 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:LoadWeapons(subClassID)
 
     self.PagingFrame:SetMaxPages(ceil(#self.filteredItems / self.PAGE_SIZE));
 
-    self.filteredEquipLocation = equipLocationWeapons[subClassID]
+    if self.weaponSlot == 1 then
+        self.selectedInvType = equipLocationWeapons[subClassID]
+    else
+        self.selectedInvType = "INVTYPE_WEAPONOFFHAND"
+    end
 
     self:OnPageChanged()
 end
@@ -1413,21 +1679,20 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:LoadItems(items)
     self.items = items
     self.loadWeaponSubClassID = nil
 
+    self.filteredItems = {}
+
     local itemClassID;
     local itemSubClassID;
 
-    if self.filteredEquipLocation == "INVTYPE_MAINHAND" then
-        itemClassID = 2
-
-    elseif self.filteredEquipLocation == "INVTYPE_SHIELD" then
+    if self.selectedInvType == "INVTYPE_SHIELD" then
         itemClassID = 4
-        itemSubClassID = 6
+        itemSubClassID = { [1] = 0, [2] = 6, }
 
-    elseif self.filteredEquipLocation == "INVTYPE_TABARD" then
+    elseif self.selectedInvType == "INVTYPE_TABARD" then
         itemClassID = 4
         itemSubClassID = 0
 
-    elseif self.filteredEquipLocation == "INVTYPE_CLOAK" then
+    elseif self.selectedInvType == "INVTYPE_CLOAK" then
         itemClassID = 4
         itemSubClassID = 1
 
@@ -1441,26 +1706,44 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:LoadItems(items)
     end
 
     if itemClassID and itemSubClassID then
-        
-        self.filteredItems = {}
+
         for appearanceID, mogs in pairs(items) do
 
-            local isKnown = 0
-            local sharedItems = Database:GetItemIDsForAppearanceID(self.filteredEquipLocation, appearanceID)
-            for k, itemID in ipairs(sharedItems) do
-                isKnown = Database:IsItemKnown(itemID)
-                if isKnown == 1 then
-                    break
-                end
-            end
+            if mogs and #mogs > 0 then
 
-            if (mogs[1].classID == itemClassID) and (mogs[1].subClassID == itemSubClassID) then
-                table.insert(self.filteredItems, {
-                    itemID = mogs[1].itemID,
-                    appearanceID = appearanceID,
-                    alternativeItems = mogs,
-                    isKnown = isKnown
-                })
+                local isKnown = 0
+                local sharedItems = Database:GetItemIDsForAppearanceID(self.selectedInvType, appearanceID)
+                for k, itemID in ipairs(sharedItems) do
+                    isKnown = Database:IsItemKnown(itemID)
+                    if isKnown == 1 then
+                        break
+                    end
+                end
+
+                if type(itemSubClassID) ==  "table" then
+
+                    for k, v in ipairs(itemSubClassID) do
+                        if (mogs[1].classID == itemClassID) and (mogs[1].subClassID == v) then
+                            table.insert(self.filteredItems, {
+                                itemID = mogs[1].itemID,
+                                appearanceID = appearanceID,
+                                alternativeItems = mogs,
+                                isKnown = isKnown,
+                                equipLocation = outfitInvSlots[self.selectedInvType],
+                            })
+                        end
+                    end
+                else
+                    if (mogs[1].classID == itemClassID) and (mogs[1].subClassID == itemSubClassID) then
+                        table.insert(self.filteredItems, {
+                            itemID = mogs[1].itemID,
+                            appearanceID = appearanceID,
+                            alternativeItems = mogs,
+                            isKnown = isKnown,
+                            equipLocation = outfitInvSlots[self.selectedInvType],
+                        })
+                    end
+                end
             end
         end
 
@@ -1472,12 +1755,13 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:LoadItems(items)
                 return a.isKnown > b.isKnown
             end
         end)
-    
+
         self.PagingFrame:SetCurrentPage(1)
-    
+
         self.PagingFrame:SetMaxPages(ceil(#self.filteredItems / self.PAGE_SIZE));
-    
+
         self:OnPageChanged()
+
     end
 end
 
@@ -1494,100 +1778,73 @@ function ClassicWrathCollectionsBuddy_WardrobeMixin:OnPageChanged()
     local i = 1
     C_Timer.NewTicker(0.01, function()
         local model = self.Models[i]
+        model.itemInfo = nil
         local index = i + (self.PagingFrame:GetCurrentPage() - 1) * self.PAGE_SIZE
 
-        if self.filteredItems[index] and modelRaceOffsets[self.characterProfile.raceName][self.filteredEquipLocation] then
+        if self.filteredItems[index] and modelRaceOffsets[self.characterProfile.raceName][self.selectedInvType] then
 
-            local modelSetup = modelRaceOffsets[self.characterProfile.raceName][self.filteredEquipLocation]
+            local modelSetup = modelRaceOffsets[self.characterProfile.raceName][self.selectedInvType]
             model:Show()
             model:Undress()
-            --C_Timer.After(0.2, function()
-                model:SetRotation(modelSetup.rotation);
-                model:SetPosition(modelSetup.pos[1], modelSetup.pos[2], modelSetup.pos[3]);
-                model:SetPortraitZoom(modelSetup.zoom);
-                model:TryOn(string.format("item:%d", self.filteredItems[index].itemID))
+            model:SetRotation(modelSetup.rotation);
+            model:SetPosition(modelSetup.pos[1], modelSetup.pos[2], modelSetup.pos[3]);
+            model:SetPortraitZoom(modelSetup.zoom);
 
+            if (self.weaponSlot == 1) then
+                model:TryOn(string.format("item:%d", self.filteredItems[index].itemID), "MAINHANDSLOT")
+                model.weaponSlot = "MAINHANDSLOT"
+            else
+                model:TryOn(string.format("item:%d", self.filteredItems[index].itemID), "SECONDARYHANDSLOT")
+                model.weaponSlot = "SECONDARYHANDSLOT"
+            end
+
+            model.itemInfo =self.filteredItems[index]
+
+            if self.filteredItems[index].isKnown == 1 then
+                model.Border:SetAtlas("transmog-wardrobe-border-collected")
+            else
+                model.Border:SetAtlas("transmog-wardrobe-border-uncollected")
+            end
+
+            local alternatives = {}
+            for k, v in ipairs(self.filteredItems[index].alternativeItems) do
                 if self.filteredItems[index].isKnown == 1 then
-                    model.Border:SetAtlas("transmog-wardrobe-border-collected")
+                    table.insert(alternatives, {
+                        itemID = v.itemID,
+                        collected = true,
+                        itemLink = v.itemLink,
+                    })
                 else
-                    model.Border:SetAtlas("transmog-wardrobe-border-uncollected")
+                    table.insert(alternatives, {
+                        itemID = v.itemID,
+                        collected = false,
+                        itemLink = v.itemLink,
+                    })
                 end
+            end
 
-                local alternatives = {}
-                for k, v in ipairs(self.filteredItems[index].alternativeItems) do
-                    if self.filteredItems[index].isKnown == 1 then
-                        table.insert(alternatives, {
-                            itemID = v.itemID,
-                            collected = true,
-                            itemLink = v.itemLink,
-                        })
-                    else
-                        table.insert(alternatives, {
-                            itemID = v.itemID,
-                            collected = false,
-                            itemLink = v.itemLink,
-                        })
-                    end
-                end
-
-                model.alternativeItems = alternatives
-            --end) 
+            model.alternativeItems = alternatives
         else
             model:Hide()
         end
         i = i + 1
     end, self.PAGE_SIZE)
 
-    -- for i = 1, self.PAGE_SIZE do
-    --     local model = self.Models[i]
-    --     local index = i + (self.PagingFrame:GetCurrentPage() - 1) * self.PAGE_SIZE
-
-    --     if self.filteredItems[index] and equipLocationPositons[self.filteredEquipLocation] then
-
-    --         local modelSetup = equipLocationPositons[self.filteredEquipLocation]
-    --         model:Show()
-    --         model:Undress()
-    --         C_Timer.After(0.2, function()
-    --             model:SetRotation(modelSetup.rotation);
-    --             model:SetPosition(modelSetup.pos[1], modelSetup.pos[2], modelSetup.pos[3]);
-    --             model:SetPortraitZoom(modelSetup.zoom);
-    --             model:TryOn(string.format("item:%d", self.filteredItems[index].itemID))
-
-    --             if self.filteredItems[index].isKnown == 1 then
-    --                 model.Border:SetAtlas("transmog-wardrobe-border-collected")
-    --             else
-    --                 model.Border:SetAtlas("transmog-wardrobe-border-uncollected")
-    --             end
-
-    --             local alternatives = {}
-    --             for k, v in ipairs(self.filteredItems[index].alternativeItems) do
-    --                 if self.filteredItems[index].isKnown == 1 then
-    --                     table.insert(alternatives, {
-    --                         itemID = v.itemID,
-    --                         collected = true,
-    --                         itemLink = v.itemLink,
-    --                     })
-    --                 else
-    --                     table.insert(alternatives, {
-    --                         itemID = v.itemID,
-    --                         collected = false,
-    --                         itemLink = v.itemLink,
-    --                     })
-    --                 end
-    --             end
-
-    --             model.alternativeItems = alternatives
-    --         end) 
-    --     else
-    --         model:Hide()
-    --     end
-    -- end
 end
 
 
 function ClassicWrathCollectionsBuddy_WardrobeMixin:OnMouseWheel(delta)
 	self.PagingFrame:OnMouseWheel(delta);
 end
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1645,8 +1902,11 @@ function ClassicWrathCollectionsBuddy_WardrobeItemModelMixin:OnUpdate()
 
 end
 
-function ClassicWrathCollectionsBuddy_WardrobeItemModelMixin:CWC_OnTransmogAppearanceAdded(itemID)
+function ClassicWrathCollectionsBuddy_WardrobeItemModelMixin:OnMouseDown(button)
 
+    if self.itemInfo then
+        addon:TriggerEvent("CWC_OnWardrobeItemClicked", self.itemInfo, self.weaponSlot)
+    end
 end
 
 function ClassicWrathCollectionsBuddy_WardrobeItemModelMixin:OnShow()

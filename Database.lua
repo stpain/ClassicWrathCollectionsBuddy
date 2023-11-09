@@ -3,10 +3,13 @@ local name, addon = ...;
 Mixin(addon, CallbackRegistryMixin)
 addon:GenerateCallbackEvents({
     "CWC_OnTransmogAppearanceAdded",
+    "CWC_OnWardrobeItemClicked",
 
     "Database_OnInitialized",
     "Database_OnProfileAdded",
     "Database_OnProfileSelected",
+    "Database_OnOutfitCreated",
+    "Database_OnOutfitDeleted",
 })
 CallbackRegistryMixin.OnLoad(addon);
 
@@ -184,7 +187,29 @@ function Database:Init()
 
     self.db = ClassicWrathCollectionsBuddy_Global;
 
+    for name, profile in pairs(self.db.profiles) do
+        profile.name = name;
+    end
+
     addon:TriggerEvent("Database_OnInitialized")
+end
+
+function Database:CreateOutfit(characterName, outfitName)
+    if self.db then
+         table.insert(self.db.outfits, {
+            character = characterName,
+            name = outfitName,
+            items = {},
+         })
+         addon:TriggerEvent("Database_OnOutfitCreated", #self.db.outfits, self.db.outfits[#self.db.outfits])
+    end
+end
+
+function Database:DeleteOutfit(index)
+    if self.db then
+        table.remove(self.db.outfits, index)
+        addon:TriggerEvent("Database_OnOutfitDeleted")
+    end
 end
 
 function Database:AddProfile(nameRealm, classID, setAsCurrentProfile)
@@ -193,6 +218,7 @@ function Database:AddProfile(nameRealm, classID, setAsCurrentProfile)
             self.db.profiles[nameRealm] = {
                 classID = classID,
                 containers = {},
+                name = nameRealm,
             }
         else
             print(string.format("[%s] profile exists!", name))
@@ -207,6 +233,9 @@ function Database:AddProfile(nameRealm, classID, setAsCurrentProfile)
                     self.ticker:Cancel()
                 end
             end)
+        end
+        if not self.db.profiles[nameRealm].name then
+            self.db.profiles[nameRealm].name = nameRealm
         end
         if setAsCurrentProfile then
             self:SetProfile(nameRealm)
